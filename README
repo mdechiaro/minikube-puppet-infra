@@ -16,6 +16,8 @@ minikube image load postgres
 
 ```
 mkdir /tmp/minikube-psql /tmp/minikube-puppetdb /tmp/minikube-puppetca
+minikube config set cpus 4
+minikube config set memory 8192
 minikube start
 kubectl apply -f puppet
 ```
