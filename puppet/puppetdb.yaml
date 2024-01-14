@@ -1,0 +1,92 @@
+# setup puppetdb
+---
+# puppetdb pv setup
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: puppetdbpv
+  labels:
+    type: local
+spec:
+  storageClassName: puppetdbvol
+  capacity:
+    storage: 12Gi
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: /tmp/minikube-puppetdb
+---
+# puppetdb claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: puppetdbvolclaim
+spec:
+  storageClassName: puppetdbvol
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+# puppetdb service http
+apiVersion: v1
+kind: Service
+metadata:
+  name: puppetdb-http
+spec:
+  selector:
+    app.kubernetes.io/name: puppetdb
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+---
+# puppetdb service psql
+apiVersion: v1
+kind: Service
+metadata:
+  name: puppetdb-psql
+spec:
+  selector:
+    app.kubernetes.io/name: puppetdb
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+# puppetdb deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: puppetdb
+  labels:
+    app.kubernetes.io/name: puppetdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: puppetdb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: puppetdb
+    spec:
+      volumes:
+      - name: puppetdb-storage
+        persistentVolumeClaim:
+          claimName: puppetdbvolclaim
+      containers:
+      - name: puppetdb
+        image: ghcr.io/voxpupuli/container-puppetdb
+        env:
+        - name: PUPPETDB_JAVA_ARGS
+          value: -Djava.net.preferIPv4Stack=true -Xms256m -Xmx256m -XX:+UseParallelGC -Xlog:gc:/opt/puppetlabs/server/data/puppetdb/puppetdb_gc.log -Djdk.tls.ephemeralDHKeySize=2048
+        ports:
+        - name: puppetdb-http
+          containerPort: 8081
+        - name: puppetdb-psql
+          containerPort: 5432
+        volumeMounts:
+        - name: puppetdb-storage
+          mountPath: /opt/puppetlabs/server/data/puppetdb

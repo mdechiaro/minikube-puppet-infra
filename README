@@ -1,0 +1,52 @@
+# Build out Puppet Infrastructure in minikube
+
+This is weekend project to learn Kubernetes using minikube. This is not for production use. This
+project creates a simple Puppet infrastructure.
+
+## Setup minikube image cache to faster deployments
+
+```
+minikube image load ghcr.io/voxpupuli/container-puppetdb
+minikube image load ghcr.io/voxpupuli/container-puppetserver
+minikube image load postgres
+```
+
+## Apply deployment specs in puppet/ directory
+
+```
+minikube delete
+minikube start
+kubectl apply -f puppet
+```
+
+Use `minikube tunnel` in second terminal to test services with telnet outside of minikube. Use
+`kubectl get services` to get those external IPs. If external IPs are `<pending>`, then tunnel isn't
+setup yet.
+
+## Workaround for iptables if docker and lxd / lxc installed on same machine
+
+```
+# https://discuss.linuxcontainers.org/t/lxd-and-docker-firewall-redux-how-to-deal-with-forward-policy-set-to-drop/9953
+sudo iptables -I DOCKER-USER  -j ACCEPT
+sudo iptables-save
+```
+
+## TODO
+* Add a dedicated puppetca server
+* Add r10k deployment
+* Add puppet agent (might need lxc?)
+* Add dashboards (puppetboard, prometheus, grafana, puppet_operational_dashboard, etc)
+* Add psql database replication
+* Add puppetdb replication
+* Add puppetca replication
+
+## Documentation used (sorted alphabetically)
+https://github.com/puppetlabs/puppetserver-helm-chart/blob/master/values.yaml
+https://github.com/voxpupuli/container-puppetdb
+https://github.com/voxpupuli/container-puppetserver
+https://hub.docker.com/_/postgres
+https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/#create-a-simple-pod-to-use-as-a-test-environment
+https://kubernetes.io/docs/tutorials/hello-minikube/
+https://minikube.sigs.k8s.io/docs/commands/tunnel/
+https://minikube.sigs.k8s.io/docs/start/
+https://stackoverflow.com/a/45682775 (docs are for mysql, but work with psql too)

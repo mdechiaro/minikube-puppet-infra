@@ -1,0 +1,95 @@
+# postgresql setup
+---
+# psql pv setup
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: psqlpv
+  labels:
+    type: local
+spec:
+  storageClassName: psqlvol
+  capacity:
+    storage: 12Gi
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: /tmp/minikube-psql
+---
+# psql claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: psqlvolclaim
+spec:
+  storageClassName: psqlvol
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app.kubernetes.io/name: psql
+  ports:
+  - protocol: TCP
+    port: 5432
+---
+# psql init puppetdb
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: psql-init-puppetdb-config
+data:
+  initdb.sql: |
+    CREATE EXTENSION pg_trgm;
+---
+# psql deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psql
+  labels:
+    app.kubernetes.io/name: psql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: psql
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: psql
+    spec:
+      volumes:
+      - name: psql-storage
+        persistentVolumeClaim:
+          claimName: psqlvolclaim
+      containers:
+      - name: psql
+        image: postgres
+        env:
+        - name: POSTGRES_USER
+          value: puppetdb
+        - name: POSTGRES_PASSWORD
+          value: puppetdb
+        - name: POSTGRES_DB
+          value: puppetdb
+        ports:
+        - name: postgres
+          containerPort: 5432
+        volumeMounts:
+        - name: psql-storage
+          mountPath: /var/lib/postgresql
+        volumeMounts:
+          - name: psql-init-puppetdb
+            mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: psql-init-puppetdb
+          configMap:
+            name: psql-init-puppetdb-config

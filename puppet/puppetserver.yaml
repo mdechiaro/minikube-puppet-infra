@@ -1,0 +1,39 @@
+# setup puppetserver with default config
+---
+# puppetserver service
+apiVersion: v1
+kind: Service
+metadata:
+  name: puppet
+spec:
+  selector:
+    app.kubernetes.io/name: puppetserver
+  ports:
+  - protocol: TCP
+    port: 8140
+    targetPort: 8140
+  type: LoadBalancer
+---
+# puppetserver deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: puppetserver
+  labels:
+    app.kubernetes.io/name: puppetserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: puppetserver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: puppetserver
+    spec:
+      containers:
+      - name: puppetserver
+        image: ghcr.io/voxpupuli/container-puppetserver
+        ports:
+        - name: puppetserver
+          containerPort: 8140
