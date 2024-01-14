@@ -11,7 +11,6 @@ spec:
   ports:
   - protocol: TCP
     port: 8140
-    targetPort: 8140
   type: LoadBalancer
 ---
 # puppetserver deployment
@@ -34,6 +33,19 @@ spec:
       containers:
       - name: puppetserver
         image: ghcr.io/voxpupuli/container-puppetserver
+        env:
+        - name: AUTOSIGN
+          value: 'false'
+        - name: CA_HOSTNAME
+          value: puppetca
+        - name: CA_ENABLED
+          value: 'false'
+        - name: DNS_ALT_NAMES
+          value: puppetca,puppet
+        - name: PUPPETSERVER_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         ports:
         - name: puppetserver
           containerPort: 8140

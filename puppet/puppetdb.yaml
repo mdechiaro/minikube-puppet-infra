@@ -8,7 +8,6 @@ metadata:
   labels:
     type: local
 spec:
-  storageClassName: puppetdbvol
   capacity:
     storage: 12Gi
   accessModes:
@@ -22,7 +21,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: puppetdbvolclaim
 spec:
-  storageClassName: puppetdbvol
   accessModes:
   - ReadWriteOnce
   resources:
@@ -40,7 +38,6 @@ spec:
   ports:
     - protocol: TCP
       port: 8081
-      targetPort: 8081
 ---
 # puppetdb service psql
 apiVersion: v1
@@ -53,7 +50,6 @@ spec:
   ports:
     - protocol: TCP
       port: 5432
-      targetPort: 5432
 ---
 # puppetdb deployment
 apiVersion: apps/v1
@@ -80,6 +76,8 @@ spec:
       - name: puppetdb
         image: ghcr.io/voxpupuli/container-puppetdb
         env:
+        - name: PUPPETSERVER_HOSTNAME
+          value: puppetca
         - name: PUPPETDB_JAVA_ARGS
           value: -Djava.net.preferIPv4Stack=true -Xms256m -Xmx256m -XX:+UseParallelGC -Xlog:gc:/opt/puppetlabs/server/data/puppetdb/puppetdb_gc.log -Djdk.tls.ephemeralDHKeySize=2048
         ports:
