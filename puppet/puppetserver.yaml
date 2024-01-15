@@ -13,6 +13,27 @@ spec:
     port: 8140
   type: LoadBalancer
 ---
+# psql init puppetdb
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: r10k-setup-configmap
+data:
+  50-setup-r10k-env.sh: |
+    #!/usr/bin/env bash
+    gem install r10k
+
+    mkdir -p /etc/puppetlabs/r10k
+    cat <<EOF>> /etc/puppetlabs/r10k/r10k.yaml
+    ---
+    sources:
+      production:
+        remote: 'https://github.com/mdechiaro/minikube-puppet-control-repo'
+        basedir: '/etc/puppetlabs/code/environments'
+    EOF
+
+    r10k deploy environment -pv
+---
 # puppetserver deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -33,6 +54,9 @@ spec:
       containers:
       - name: puppetserver
         image: ghcr.io/voxpupuli/container-puppetserver
+        volumeMounts:
+        - name: setup-r10k-env
+          mountPath: /docker-entrypoint.d
         env:
         - name: AUTOSIGN
           value: 'false'
@@ -49,3 +73,8 @@ spec:
         ports:
         - name: puppetserver
           containerPort: 8140
+      volumes:
+      - name: setup-r10k-env
+        configMap:
+          name: r10k-setup-configmap
+          defaultMode: 0500

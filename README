@@ -15,7 +15,6 @@ minikube image load postgres
 ## Prep
 
 ```
-mkdir /tmp/minikube-psql /tmp/minikube-puppetdb /tmp/minikube-puppetca
 minikube config set cpus 4
 minikube config set memory 8192
 ```
@@ -51,7 +50,6 @@ sudo iptables-save
 ```
 
 ## TODO
-* Add r10k deployment
 * Add puppet agent (might need lxc?)
 * Add dashboards (puppetboard, prometheus, grafana, puppet_operational_dashboard, etc)
 * Add psql database replication
