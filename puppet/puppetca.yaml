@@ -1,32 +1,5 @@
 # setup puppetca with default config
 ---
-# puppetca pv setup
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: puppetcapv
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 12Gi
-  accessModes:
-  - ReadWriteOnce
-  hostPath:
-    path: /tmp/minikube-puppetca
----
-# puppetca claim
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: puppetcavolclaim
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 3Gi
----
 # puppetca service
 apiVersion: v1
 kind: Service
@@ -57,10 +30,6 @@ spec:
       labels:
         app.kubernetes.io/name: puppetca
     spec:
-      volumes:
-      - name: puppetca-storage
-        persistentVolumeClaim:
-          claimName: puppetcavolclaim
       containers:
       - name: puppetca
         image: ghcr.io/voxpupuli/container-puppetserver
@@ -76,6 +45,3 @@ spec:
         ports:
         - name: puppetca
           containerPort: 8140
-        volumeMounts:
-        - name: puppetca-storage
-          mountPath: /etc/puppetlabs/puppet/ssl

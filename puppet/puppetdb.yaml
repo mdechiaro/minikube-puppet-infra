@@ -1,32 +1,5 @@
 # setup puppetdb
 ---
-# puppetdb pv setup
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: puppetdbpv
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 12Gi
-  accessModes:
-  - ReadWriteOnce
-  hostPath:
-    path: /tmp/minikube-puppetdb
----
-# puppetdb claim
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: puppetdbvolclaim
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 3Gi
----
 # puppetdb service http
 apiVersion: v1
 kind: Service
@@ -36,20 +9,8 @@ spec:
   selector:
     app.kubernetes.io/name: puppetdb
   ports:
-    - protocol: TCP
-      port: 8081
----
-# puppetdb service psql
-apiVersion: v1
-kind: Service
-metadata:
-  name: puppetdb-psql
-spec:
-  selector:
-    app.kubernetes.io/name: puppetdb
-  ports:
-    - protocol: TCP
-      port: 5432
+  - protocol: TCP
+    port: 8081
 ---
 # puppetdb deployment
 apiVersion: apps/v1
@@ -68,10 +29,6 @@ spec:
       labels:
         app.kubernetes.io/name: puppetdb
     spec:
-      volumes:
-      - name: puppetdb-storage
-        persistentVolumeClaim:
-          claimName: puppetdbvolclaim
       containers:
       - name: puppetdb
         image: ghcr.io/voxpupuli/container-puppetdb
@@ -83,8 +40,3 @@ spec:
         ports:
         - name: puppetdb-http
           containerPort: 8081
-        - name: puppetdb-psql
-          containerPort: 5432
-        volumeMounts:
-        - name: puppetdb-storage
-          mountPath: /opt/puppetlabs/server/data/puppetdb

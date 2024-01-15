@@ -12,14 +12,18 @@ minikube image load ghcr.io/voxpupuli/container-puppetserver
 minikube image load postgres
 ```
 
-## Apply deployment specs in puppet/ directory
+## Prep
 
 ```
 mkdir /tmp/minikube-psql /tmp/minikube-puppetdb /tmp/minikube-puppetca
 minikube config set cpus 4
 minikube config set memory 8192
-minikube start
-kubectl apply -f puppet
+```
+
+## Apply deployment specs in puppet/ directory
+
+```
+kubectl apply -f puppet/
 ```
 
 Use `minikube tunnel` in second terminal to test services with telnet outside of minikube. Use
@@ -27,6 +31,16 @@ Use `minikube tunnel` in second terminal to test services with telnet outside of
 setup yet.
 
 You can verify dns is working with `kubectl exec -i -t dnsutils -- nslookup <service>`.
+
+
+## Cleanup
+
+```
+kubectl delete all --all
+kubectl get pvc | grep -v NAME | awk '{print $1}' | xargs kubectl delete pvc
+kubectl get pv | grep -v NAME | awk '{print $1}' | xargs kubectl delete pv
+kubectl get configmap | grep -v "NAME\|kube-root-ca.crt" | awk '{print $1}' | xargs kubectl delete configmap
+```
 
 ## Workaround for iptables if docker and lxd / lxc installed on same machine
 
