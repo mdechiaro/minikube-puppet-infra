@@ -13,11 +13,11 @@ spec:
     port: 8140
   type: LoadBalancer
 ---
-# psql init puppetdb
+# puppetserver init scripts configmap
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: r10k-setup-configmap
+  name: puppetserver-docker-entrypoint-configmap
 data:
   50-setup-r10k-env.sh: |
     #!/usr/bin/env bash
@@ -33,6 +33,10 @@ data:
     EOF
 
     r10k deploy environment -pv
+  99-fix-puppetserver-params.sh: |
+    #!/usr/bin/env bash
+    /opt/puppetlabs/bin/puppet config set ca_server "puppetca.default.svc.cluster.local"
+    /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
 ---
 # puppetserver deployment
 apiVersion: apps/v1
@@ -54,18 +58,15 @@ spec:
       containers:
       - name: puppetserver
         image: ghcr.io/voxpupuli/container-puppetserver
-        volumeMounts:
-        - name: setup-r10k-env
-          mountPath: /docker-entrypoint.d
         env:
         - name: AUTOSIGN
           value: 'false'
-        - name: CA_HOSTNAME
-          value: puppetca
         - name: CA_ENABLED
           value: 'false'
+        - name: CA_HOSTNAME
+          value: puppetca.default.svc.cluster.local
         - name: DNS_ALT_NAMES
-          value: puppetca,puppet
+          value: puppet.default.svc.cluster.local
         - name: PUPPETSERVER_HOSTNAME
           valueFrom:
             fieldRef:
@@ -73,8 +74,11 @@ spec:
         ports:
         - name: puppetserver
           containerPort: 8140
+        volumeMounts:
+        - name: docker-entrypoint-configmap
+          mountPath: /docker-custom-entrypoint.d
       volumes:
-      - name: setup-r10k-env
+      - name: docker-entrypoint-configmap
         configMap:
-          name: r10k-setup-configmap
+          name: puppetserver-docker-entrypoint-configmap
           defaultMode: 0500

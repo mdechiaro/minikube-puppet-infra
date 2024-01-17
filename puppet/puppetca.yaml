@@ -13,6 +13,17 @@ spec:
     port: 8140
   type: LoadBalancer
 ---
+# puppetca init scripts configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: puppetca-docker-entrypoint-configmap
+data:
+  99-fix-puppetserver-params.sh: |
+    #!/usr/bin/env bash
+    /opt/puppetlabs/bin/puppet config set ca_server "puppetca.default.svc.cluster.local"
+    /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
+---
 # puppetca deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -34,10 +45,16 @@ spec:
       - name: puppetca
         image: ghcr.io/voxpupuli/container-puppetserver
         env:
-        - name: DNS_ALT_NAMES
-          value: puppetca,puppet
+        - name: CA_ENABLED
+          value: 'true'
+        - name: AUTOSIGN
+          value: 'true'
+        - name: CA_HOSTNAME
+          value: puppetca.default.svc.cluster.local
         - name: CA_ALLOW_SUBJECT_ALT_NAMES
           value: 'true'
+        - name: DNS_ALT_NAMES
+          value: puppetca.default.svc.cluster.local
         - name: PUPPETSERVER_HOSTNAME
           valueFrom:
             fieldRef:
@@ -45,3 +62,11 @@ spec:
         ports:
         - name: puppetca
           containerPort: 8140
+        volumeMounts:
+        - name: docker-entrypoint-configmap
+          mountPath: /docker-custom-entrypoint.d
+      volumes:
+      - name: docker-entrypoint-configmap
+        configMap:
+          name: puppetca-docker-entrypoint-configmap
+          defaultMode: 0500

@@ -12,6 +12,17 @@ spec:
   - protocol: TCP
     port: 8081
 ---
+# puppetca init scripts configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: puppetdb-docker-entrypoint-configmap
+data:
+  99-fix-puppetserver-params.sh: |
+    #!/usr/bin/env bash
+    /opt/puppetlabs/bin/puppet config set ca_server "puppetca.default.svc.cluster.local"
+    /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
+---
 # puppetdb deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -33,10 +44,26 @@ spec:
       - name: puppetdb
         image: ghcr.io/voxpupuli/container-puppetdb
         env:
+        - name: POD_METADATA_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CERTNAME
+          value: "$(POD_METADATA_NAME).default.svc.cluster.local"
         - name: PUPPETSERVER_HOSTNAME
-          value: puppetca
+          value: puppetca.default.svc.cluster.local
+        - name: DNS_ALT_NAMES
+          value: puppetdb.default.svc.cluster.local
         - name: PUPPETDB_JAVA_ARGS
           value: -Djava.net.preferIPv4Stack=true -Xms256m -Xmx256m -XX:+UseParallelGC -Xlog:gc:/opt/puppetlabs/server/data/puppetdb/puppetdb_gc.log -Djdk.tls.ephemeralDHKeySize=2048
         ports:
-        - name: puppetdb-http
+        - name: puppetdb-https
           containerPort: 8081
+        volumeMounts:
+        - name: docker-entrypoint-configmap
+          mountPath: /docker-custom-entrypoint.d
+      volumes:
+      - name: docker-entrypoint-configmap
+        configMap:
+          name: puppetdb-docker-entrypoint-configmap
+          defaultMode: 0500
