@@ -18,10 +18,19 @@ kind: ConfigMap
 metadata:
   name: puppetdb-docker-entrypoint-configmap
 data:
-  99-fix-puppetserver-params.sh: |
+  50-fix-puppetserver-params.sh: |
     #!/usr/bin/env bash
     /opt/puppetlabs/bin/puppet config set ca_server "puppetca.default.svc.cluster.local"
     /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
+  50-setup-csr-attributes.sh: |
+    #!/usr/bin/env bash
+
+    cat <<EOF>> /etc/puppetlabs/puppet/csr_attributes.yaml: |
+    ---
+    extension_requests:
+      pp_apptier: prd
+      pp_role: puppetdb
+    EOF
 ---
 # puppetdb deployment
 apiVersion: apps/v1

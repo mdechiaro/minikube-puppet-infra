@@ -1,17 +1,18 @@
 # Build a Puppet stack in minikube
 
 This started out as weekend project to learn Kubernetes using minikube.
-This project creates a multi-node Puppet stack.
+This project creates a multi-node Puppet stack. The configs are managed
+with r10k and https://github.com/mdechiaro/puppet-control-repo.
 
 This is not for production use.
 
-## TODO
-* Add trusted facts via csr_attributes.yaml to be used by Hiera
+## TODO (in no order)
 * Add dashboards (puppetboard, prometheus)
 * Add psql database replication
 * Add puppetdb replication
 * Add puppetca replication
 * Add choria orchestrator
+* Add a webhook or self-hosted runner for CI/CD on control repo
 
 ## Current Stack
 ```
