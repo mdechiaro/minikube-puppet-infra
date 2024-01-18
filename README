@@ -1,7 +1,30 @@
-# Build out Puppet Infrastructure in minikube
+# Build a Puppet stack in minikube
 
-This is weekend project to learn Kubernetes using minikube. This is not for production use. This
-project creates a multi-node Puppet infrastructure.
+This started out as weekend project to learn Kubernetes using minikube.
+This project creates a multi-node Puppet stack.
+
+This is not for production use.
+
+## TODO
+* Add trusted facts via csr_attributes.yaml to be used by Hiera
+* Add dashboards (puppetboard, prometheus)
+* Add psql database replication
+* Add puppetdb replication
+* Add puppetca replication
+* Add choria orchestrator
+
+## Current Stack
+```
+# kubectl get pods -A
+NAMESPACE     NAME                               READY   STATUS    RESTARTS        AGE
+default       dnsutils                           1/1     Running   0               73m
+default       psql-dcc7bbc66-5jl6w               1/1     Running   0               73m
+default       puppetca-78f7c89c8f-v6wjn          1/1     Running   0               73m
+default       puppetdb-dbdbcc8bb-wxkq2           1/1     Running   0               45m
+default       puppetserver-6d56786d58-89jtb      1/1     Running   0               50m
+default       puppetserver-6d56786d58-dlzn6      1/1     Running   0               50m
+default       puppetserver-6d56786d58-qc2x5      1/1     Running   0               50m
+```
 
 ## Setup minikube image cache to faster deployments
 
@@ -25,12 +48,15 @@ minikube config set memory 8192
 kubectl apply -f puppet/
 ```
 
-Use `minikube tunnel` in second terminal to test services with telnet outside of minikube. Use
-`kubectl get services` to get those external IPs. If external IPs are `<pending>`, then tunnel isn't
-setup yet.
+Use `minikube tunnel` in second terminal to test services with telnet
+outside of minikube. Use `kubectl get services` to get those external
+IPs. If external IPs are `<pending>`, then tunnel isn't setup yet.
 
-You can verify dns is working with `kubectl exec -i -t dnsutils -- nslookup <service>`.
+You can verify dns is working with:
 
+```
+kubectl exec -i -t dnsutils -- nslookup <service>
+```
 
 ## Cleanup
 
@@ -41,29 +67,12 @@ kubectl get pv | grep -v NAME | awk '{print $1}' | xargs kubectl delete pv
 kubectl get configmap | grep -v "NAME\|kube-root-ca.crt" | awk '{print $1}' | xargs kubectl delete configmap
 ```
 
-## Workaround for iptables if docker and lxd / lxc installed on same machine
+## Workaround for iptables
+
+If you have docker and lxd / lxc installed on same machine.
 
 ```
 # https://discuss.linuxcontainers.org/t/lxd-and-docker-firewall-redux-how-to-deal-with-forward-policy-set-to-drop/9953
 sudo iptables -I DOCKER-USER  -j ACCEPT
 sudo iptables-save
 ```
-
-## TODO
-* Add puppet agent (might need lxc?)
-* Add dashboards (puppetboard, prometheus, grafana, puppet_operational_dashboard, etc)
-* Add psql database replication
-* Add puppetdb replication
-* Add puppetca replication
-
-## Documentation used (sorted alphabetically)
-https://github.com/puppetlabs/puppetserver-helm-chart/blob/master/values.yaml
-https://github.com/voxpupuli/container-puppetdb
-https://github.com/voxpupuli/container-puppetserver
-https://hub.docker.com/_/postgres
-https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/#create-a-simple-pod-to-use-as-a-test-environment
-https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
-https://kubernetes.io/docs/tutorials/hello-minikube/
-https://minikube.sigs.k8s.io/docs/commands/tunnel/
-https://minikube.sigs.k8s.io/docs/start/
-https://stackoverflow.com/a/45682775 (docs are for mysql, but work with psql too)
