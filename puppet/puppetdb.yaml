@@ -25,7 +25,7 @@ data:
   50-setup-csr-attributes.sh: |
     #!/usr/bin/env bash
 
-    cat <<EOF>> /etc/puppetlabs/puppet/csr_attributes.yaml: |
+    cat <<EOF>> /etc/puppetlabs/puppet/csr_attributes.yaml
     ---
     extension_requests:
       pp_apptier: prd
