@@ -32,7 +32,7 @@ metadata:
 data:
   50-fix-puppetserver-params.sh: |
     #!/usr/bin/env bash
-    /opt/puppetlabs/bin/puppet config set ca_server "puppetca.default.svc.cluster.local"
+    # workaround for https://github.com/voxpupuli/container-puppetserver/issues/51
     /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
   50-setup-csr-attributes.sh: |
     #!/usr/bin/env bash

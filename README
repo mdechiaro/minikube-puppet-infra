@@ -62,10 +62,7 @@ kubectl exec -i -t dnsutils -- nslookup <service>
 ## Cleanup
 
 ```
-kubectl delete all --all
-kubectl get pvc | grep -v NAME | awk '{print $1}' | xargs kubectl delete pvc
-kubectl get pv | grep -v NAME | awk '{print $1}' | xargs kubectl delete pv
-kubectl get configmap | grep -v "NAME\|kube-root-ca.crt" | awk '{print $1}' | xargs kubectl delete configmap
+rake delete_stack
 ```
 
 ## Workaround for iptables

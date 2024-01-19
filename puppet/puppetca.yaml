@@ -33,7 +33,7 @@ metadata:
 data:
   50-fix-puppetserver-params.sh: |
     #!/usr/bin/env bash
-    /opt/puppetlabs/bin/puppet config set ca_server "puppetca.default.svc.cluster.local"
+    # workaround for https://github.com/voxpupuli/container-puppetserver/issues/51
     /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
   50-setup-csr-attributes.sh: |
     #!/usr/bin/env bash
@@ -66,6 +66,10 @@ spec:
       - name: puppetca
         image: ghcr.io/voxpupuli/container-puppetserver
         env:
+        - name: POD_METADATA_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: CA_ENABLED
           value: 'true'
         - name: AUTOSIGN
@@ -77,9 +81,7 @@ spec:
         - name: DNS_ALT_NAMES
           value: puppetca.default.svc.cluster.local
         - name: PUPPETSERVER_HOSTNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+          value: "$(POD_METADATA_NAME).default.svc.cluster.local"
         ports:
         - name: puppetca
           containerPort: 8140
