@@ -12,6 +12,18 @@ spec:
   - protocol: TCP
     port: 8081
 ---
+# workaround for https://github.com/voxpupuli/container-puppetserver/issues/50
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: csr-attributes-yaml-configmap
+data:
+  csr_attributes.yaml: |
+    ---
+    extension_requests:
+      pp_apptier: prd
+      pp_role: puppetdb
+---
 # puppetca init scripts configmap
 apiVersion: v1
 kind: ConfigMap
@@ -71,8 +83,14 @@ spec:
         volumeMounts:
         - name: docker-entrypoint-configmap
           mountPath: /docker-custom-entrypoint.d
+        - name: setup-csr-attributes-yaml
+          mountPath: /etc/puppetlabs/puppet/csr_attributes.yaml
+          subPath: csr_attributes.yaml
       volumes:
       - name: docker-entrypoint-configmap
         configMap:
           name: puppetdb-docker-entrypoint-configmap
           defaultMode: 0500
+      - name: setup-csr-attributes-yaml
+        configMap:
+          name: csr-attributes-yaml-configmap
