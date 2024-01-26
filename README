@@ -16,7 +16,7 @@ This is not for production use.
 
 ## Current Stack
 ```
-# kubectl get pods -A
+# kubectl get pods -A | grep -v kube-system
 NAMESPACE     NAME                               READY   STATUS    RESTARTS        AGE
 default       dnsutils                           1/1     Running   0               73m
 default       psql-dcc7bbc66-5jl6w               1/1     Running   0               73m
@@ -49,9 +49,30 @@ minikube config set memory 8192
 kubectl apply -f puppet/
 ```
 
-Use `minikube tunnel` in second terminal to test services with telnet
+Use `minikube tunnel` in second terminal to test services with puppet
 outside of minikube. Use `kubectl get services` to get those external
-IPs. If external IPs are `<pending>`, then tunnel isn't setup yet.
+IPs. If external IPs are `<pending>`, then the tunnel isn't setup yet.
+
+```
+# kubectl get services -A -o wide
+NAMESPACE     NAME         TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)                  AGE   SELECTOR
+default       kubernetes   ClusterIP      10.96.0.1       <none>          443/TCP                  22h   <none>
+default       postgres     ClusterIP      10.111.26.163   <none>          5432/TCP                 22h   app.kubernetes.io/name=psql
+default       puppet       LoadBalancer   10.100.87.56    10.100.87.56    8140:31525/TCP           22h   app.kubernetes.io/name=puppetserver
+default       puppetca     LoadBalancer   10.111.47.194   10.111.47.194   8140:30443/TCP           22h   app.kubernetes.io/name=puppetca
+default       puppetdb     ClusterIP      10.99.145.34    <none>          8081/TCP                 22h   app.kubernetes.io/name=puppetdb
+kube-system   kube-dns     ClusterIP      10.96.0.10      <none>          53/UDP,53/TCP,9153/TCP   11d   k8s-app=kube-dns
+```
+
+Add `EXTERNAL-IP` for puppet, puppetca services to `/etc/hosts` on the
+external agent you want to register to this stack. IPs can change, so
+check output of `kubectl get services -A -o wide` to get correct IPs.
+
+```
+# /etc/hosts
+10.100.87.56 puppet.default.svc.cluster.local
+10.111.47.194 puppetca.default.svc.cluster.local
+```
 
 You can verify dns is working with:
 
