@@ -63,7 +63,7 @@ spec:
     spec:
       containers:
       - name: puppetdb
-        image: ghcr.io/voxpupuli/container-puppetdb
+        image: ghcr.io/voxpupuli/container-puppetdb:8.3.0-latest
         env:
         - name: POD_METADATA_NAME
           valueFrom:
@@ -77,20 +77,16 @@ spec:
           value: puppetdb.default.svc.cluster.local
         - name: PUPPETDB_JAVA_ARGS
           value: -Djava.net.preferIPv4Stack=true -Xms256m -Xmx256m -XX:+UseParallelGC -Xlog:gc:/opt/puppetlabs/server/data/puppetdb/puppetdb_gc.log -Djdk.tls.ephemeralDHKeySize=2048
+        - name: CSR_ATTRIBUTES
+          value: '{"extension_requests": { "pp_apptier": "prd", "pp_role": "puppetdb" } }'
         ports:
         - name: puppetdb-https
           containerPort: 8081
         volumeMounts:
         - name: docker-entrypoint-configmap
           mountPath: /docker-custom-entrypoint.d
-        - name: setup-csr-attributes-yaml
-          mountPath: /etc/puppetlabs/puppet/csr_attributes.yaml
-          subPath: csr_attributes.yaml
       volumes:
       - name: docker-entrypoint-configmap
         configMap:
           name: puppetdb-docker-entrypoint-configmap
           defaultMode: 0500
-      - name: setup-csr-attributes-yaml
-        configMap:
-          name: csr-attributes-yaml-configmap

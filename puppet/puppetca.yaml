@@ -13,18 +13,6 @@ spec:
     port: 8140
   type: LoadBalancer
 ---
-# workaround for https://github.com/voxpupuli/container-puppetserver/issues/50
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: csr-attributes-yaml-configmap
-data:
-  csr_attributes.yaml: |
-    ---
-    extension_requests:
-      pp_apptier: prd
-      pp_role: puppetca
----
 # puppetca init scripts configmap
 apiVersion: v1
 kind: ConfigMap
@@ -35,15 +23,6 @@ data:
     #!/usr/bin/env bash
     # workaround for https://github.com/voxpupuli/container-puppetserver/issues/51
     /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
-  50-setup-csr-attributes.sh: |
-    #!/usr/bin/env bash
-
-    cat <<EOF>> /etc/puppetlabs/puppet/csr_attributes.yaml
-    ---
-    extension_requests:
-      pp_apptier: prd
-      pp_role: puppetca
-    EOF
 ---
 # puppetca deployment
 apiVersion: apps/v1
@@ -64,7 +43,7 @@ spec:
     spec:
       containers:
       - name: puppetca
-        image: ghcr.io/voxpupuli/container-puppetserver
+        image: ghcr.io/voxpupuli/container-puppetserver:8.4.0-latest
         env:
         - name: POD_METADATA_NAME
           valueFrom:
@@ -82,20 +61,16 @@ spec:
           value: puppetca.default.svc.cluster.local
         - name: PUPPETSERVER_HOSTNAME
           value: "$(POD_METADATA_NAME).default.svc.cluster.local"
+        - name: CSR_ATTRIBUTES
+          value: '{"extension_requests": { "pp_apptier": "prd", "pp_role": "puppetca" } }'
         ports:
         - name: puppetca
           containerPort: 8140
         volumeMounts:
         - name: docker-entrypoint-configmap
           mountPath: /docker-custom-entrypoint.d
-        - name: setup-csr-attributes-yaml
-          mountPath: /etc/puppetlabs/puppet/csr_attributes.yaml
-          subPath: csr_attributes.yaml
       volumes:
       - name: docker-entrypoint-configmap
         configMap:
           name: puppetca-docker-entrypoint-configmap
           defaultMode: 0500
-      - name: setup-csr-attributes-yaml
-        configMap:
-          name: csr-attributes-yaml-configmap
