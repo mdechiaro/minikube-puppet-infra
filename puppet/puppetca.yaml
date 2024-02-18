@@ -43,7 +43,7 @@ spec:
     spec:
       containers:
       - name: puppetca
-        image: ghcr.io/voxpupuli/container-puppetserver:8.4.0-latest
+        image: ghcr.io/voxpupuli/container-puppetserver:8.4.0-main
         env:
         - name: POD_METADATA_NAME
           valueFrom:
