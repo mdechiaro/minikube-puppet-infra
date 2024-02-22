@@ -19,8 +19,34 @@ kind: ConfigMap
 metadata:
   name: puppetserver-docker-entrypoint-configmap
 data:
-  50-setup-r10k-env.sh: |
+  # order doesn't seem to take effect here, so do all steps in a single script
+  setup.sh: |
     #!/usr/bin/env bash
+
+    # fix puppetserver params
+    # workaround for https://github.com/voxpupuli/container-puppetserver/issues/51
+    /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
+
+    # setup puppetdb-termini
+    /opt/puppetlabs/bin/puppet resource package puppetdb-termini ensure=latest
+    /opt/puppetlabs/bin/puppet config set reports "store,puppetdb"
+    /opt/puppetlabs/bin/puppet config set storeconfigs "true"
+    /opt/puppetlabs/bin/puppet config set storeconfigs_backend "puppetdb"
+
+    cat <<EOF>> /etc/puppetlabs/puppet/puppetdb.conf
+    [main]
+    server_urls = https://puppetdb.default.svc.cluster.local:8081
+    EOF
+
+    cat <<EOF>> /etc/puppetlabs/puppet/routes.yaml
+    ---
+    master:
+      facts:
+        terminus: puppetdb
+        cache: yaml
+    EOF
+
+    # setup r10k
     gem install r10k
 
     mkdir -p /etc/puppetlabs/r10k
@@ -33,10 +59,6 @@ data:
     EOF
 
     r10k deploy environment -pv
-  50-fix-puppetserver-params.sh: |
-    #!/usr/bin/env bash
-    # workaround for https://github.com/voxpupuli/container-puppetserver/issues/51
-    /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
 ---
 # puppetserver deployment
 apiVersion: apps/v1
