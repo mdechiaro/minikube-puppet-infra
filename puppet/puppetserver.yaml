@@ -33,7 +33,7 @@ data:
     /opt/puppetlabs/bin/puppet config set storeconfigs "true"
     /opt/puppetlabs/bin/puppet config set storeconfigs_backend "puppetdb"
 
-    cat <<EOF>> /etc/puppetlabs/puppet/puppetdb.conf
+    cat <<EOF> /etc/puppetlabs/puppet/puppetdb.conf
     [main]
     server_urls = https://puppetdb.default.svc.cluster.local:8081
     EOF
