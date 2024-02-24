@@ -23,6 +23,7 @@ data:
     #!/usr/bin/env bash
     # workaround for https://github.com/voxpupuli/container-puppetserver/issues/51
     /opt/puppetlabs/bin/puppet config set server "puppet.default.svc.cluster.local"
+    /opt/puppetlabs/bin/puppet config set ca_server "puppetca.default.svc.cluster.local"
 ---
 # puppetca deployment
 apiVersion: apps/v1
@@ -62,7 +63,7 @@ spec:
         - name: PUPPETSERVER_HOSTNAME
           value: "$(POD_METADATA_NAME).default.svc.cluster.local"
         - name: CSR_ATTRIBUTES
-          value: '{"extension_requests": { "pp_apptier": "prd", "pp_role": "puppetca" } }'
+          value: '{"ppAuthCertExt" : { "pp_cli_auth": "true" }, "extension_requests": { "pp_apptier": "prd", "pp_role": "puppetca" } }'
         ports:
         - name: puppetca
           containerPort: 8140
