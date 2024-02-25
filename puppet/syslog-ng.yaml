@@ -1,0 +1,59 @@
+---
+# syslog service
+apiVersion: v1
+kind: Service
+metadata:
+  name: syslog-ng
+spec:
+  selector:
+    app.kubernetes.io/name: syslog-ng
+  ports:
+  - protocol: UDP
+    port: 514
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: syslog-ng-configmap
+data:
+  syslog-ng.conf: |
+    @version: 4.6
+    @include "scl.conf"
+    source s_local { internal(); };
+    source s_net { udp(ip("0.0.0.0")); syslog(ip("0.0.0.0")); };
+    destination d_file { file("/var/log/syslog"); };
+    log { source(s_local); source(s_net); destination(d_file); };
+---
+# syslog deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syslog-ng
+  labels:
+    app.kubernetes.io/name: syslog-ng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: syslog-ng
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: syslog-ng
+    spec:
+      containers:
+      - name: syslog-ng
+        image: balabit/syslog-ng
+        env:
+        ports:
+        - name: syslog-ng
+          containerPort: 514
+          protocol: UDP
+        volumeMounts:
+        - name: syslog-ng-config
+          mountPath: /etc/syslog-ng/syslog-ng.conf
+          subPath: syslog-ng.conf
+      volumes:
+      - name: syslog-ng-config
+        configMap:
+          name: syslog-ng-configmap

@@ -6,26 +6,17 @@ with r10k and https://github.com/mdechiaro/puppet-control-repo.
 
 This is not for production use.
 
-## TODO (in no order)
-* Add psql database replication
-* Add puppetdb replication
-* Add puppetca replication
-* Add choria orchestrator
-* Add a webhook or self-hosted runner for CI/CD on control repo
+## Features
 
-## Current Stack
-```
-kubectl get pods
-NAME                           READY   STATUS    RESTARTS   AGE
-dnsutils                       1/1     Running   0          3h11m
-psql-dcc7bbc66-bjj2r           1/1     Running   0          3h11m
-puppetboard-7b6dd68cf7-bcvqz   1/1     Running   0          11m
-puppetca-8694f8b54d-5frq9      1/1     Running   0          3h11m
-puppetdb-5d999d858c-mk9kc      1/1     Running   0          3h11m
-puppetserver-8766c968c-86rkc   1/1     Running   0          3h11m
-puppetserver-8766c968c-9hvh9   1/1     Running   0          3h11m
-puppetserver-8766c968c-bn2wx   1/1     Running   0          3h11m
-```
+* Puppet stack for config management inside minikube
+* Centralized logging with fluentd
+* Dashboards to monitor catalogs
+
+## TODO (in no order)
+* Fix centralized logging to use something modern
+* Add persistent storage
+* Add a webhook or self-hosted runner for CI/CD on control repo
+* Add helper scripts for cluster management
 
 ## Setup minikube image cache to faster deployments
 
@@ -33,6 +24,9 @@ puppetserver-8766c968c-bn2wx   1/1     Running   0          3h11m
 minikube image load registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3
 minikube image load ghcr.io/voxpupuli/container-puppetdb:8.3.0-latest
 minikube image load ghcr.io/voxpupuli/container-puppetserver:8.4.0-latest
+minikube image load ghcr.io/voxpupuli/puppetboard:latest
+minikube image load fluent/fluentd-kubernetes-daemonset:v1.11.2-debian-syslog-1.0
+minikube image load balabit/syslog-ng
 minikube image load postgres
 ```
 
