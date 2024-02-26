@@ -51,9 +51,9 @@ task :generate_puppet_cert, [:app_name] do |_, args|
   domain = 'default.svc.cluster.local.pem'
   puppetca = `kubectl get pods | grep puppetca | awk '{print $1}'`.chomp
 
-  `echo 'Generating puppet certificate for #{args.app_name}.default.svc.cluster.local'`
+  `echo 'Generating puppet certificate for #{args.app_name}.#{domain}'`
 
-  sh "kubectl exec -it #{puppetca} -- puppetserver ca generate --certname #{args.app_name}.default.svc.cluster.local"
+  sh "kubectl exec -it #{puppetca} -- puppetserver ca generate --certname #{args.app_name}.#{domain}"
 
   puppetdir = '/etc/puppetlabs/puppet/ssl'
   ca_cert = `kubectl exec -it #{puppetca} -- cat #{puppetdir}/ca/ca_crt.pem | base64`
