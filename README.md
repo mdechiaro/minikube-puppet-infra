@@ -30,26 +30,25 @@ rake kubectl_apply[puppet]
 
 ## Puppetboard
 
-Some applications require Puppet certificates to communicate with
-PuppetDB. This requires a running PuppetCA server, and can be generated
-with the `rake generate_puppet_cert[app_name]` task.
+This server requires a puppet cert and other secrets before it can be
+running properly.
 
 ```
 rake generate_puppet_cert[puppetboard]
+kubectl create secret generic puppetboard-secret-key \
+  --from-literal=PUPPETBOARD_SECRET_KEY="$(rake generate_urandom_key)"
 ```
 
-This application requires a `SECRET_KEY` environment variable to start
-correctly.
+## PuppetDB certs
+
+Some applications, e.g. puppetboard, require Puppet certificates to
+communicate with PuppetDB. This requires PuppetCA to generate a
+certificate. A cert can be created with specific rake task. It outputs a
+base64 encoded string that can be placed inside secret environment
+variable.
 
 ```
-SECRET_KEY="$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)"
-kubectl create secret generic puppetboard-secret-key --from-literal=PUPPETBOARD_SECRET_KEY="${SECRET_KEY}"
-```
-
-After these secrets are setup then we can apply the `apps` folder.
-
-```
-rake kubectl_apply[apps]
+rake generate_puppet_cert[app_name]
 ```
 
 ## External services

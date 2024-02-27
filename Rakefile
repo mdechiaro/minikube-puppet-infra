@@ -2,6 +2,12 @@
 
 require 'rake'
 
+def minikube_running?
+  return true if system('docker ps | grep minikube > /dev/null')
+
+  false
+end
+
 desc 'Adjust minikube configs'
 task :minikube_config do
   sh 'minikube config set cpus 4'
@@ -10,7 +16,7 @@ end
 
 desc 'Start minikube docker instance'
 task :minikube_start do
-  sh 'minikube start'
+  sh 'minikube start' unless minikube_running?
 end
 
 desc 'Load docker images into minikube'
@@ -31,12 +37,12 @@ end
 
 desc 'Stop minikube docker instance'
 task :minikube_stop do
-  sh 'minikube stop'
+  sh 'minikube stop' if minikube_running?
 end
 
 desc 'Delete minikube docker instance'
 task :minikube_delete do
-  Rake::Task[:minikube_stop].execute
+  Rake::Task[:minikube_stop].execute if minikube_running?
   sh 'minikube delete'
 end
 
@@ -46,22 +52,48 @@ task :kubectl_apply, [:config] do |_, args|
   sh "kubectl apply -f #{args.config}"
 end
 
+desc 'generate an alphanumeric pseudo-random key'
+task :generate_urandom_key do
+  print `tr -dc [:graph:] </dev/urandom | head -c 32`
+end
+
 desc 'Generate Puppet certificate for applications'
 task :generate_puppet_cert, [:app_name] do |_, args|
   domain = 'default.svc.cluster.local.pem'
   puppetca = `kubectl get pods | grep puppetca | awk '{print $1}'`.chomp
-
-  `echo 'Generating puppet certificate for #{args.app_name}.#{domain}'`
-
-  sh "kubectl exec -it #{puppetca} -- puppetserver ca generate --certname #{args.app_name}.#{domain}"
-
   puppetdir = '/etc/puppetlabs/puppet/ssl'
-  ca_cert = `kubectl exec -it #{puppetca} -- cat #{puppetdir}/ca/ca_crt.pem | base64`
-  key = `kubectl exec -it #{puppetca} -- cat #{puppetdir}/private_keys/#{args.app_name}.#{domain} | base64`
-  cert = `kubectl exec -it #{puppetca} -- cat #{puppetdir}/certs/#{args.app_name}.#{domain} | base64`
+  exec_cmd = "kubectl exec -it #{puppetca}"
+  secret_cmd = 'kubectl create secret generic'
 
-  kubectl_secret_cmd = 'kubectl create secret generic'
-  `#{kubectl_secret_cmd} #{args.app_name}-ssl-ca-cert --from-literal=#{args.app_name.upcase}_CA_CERT='#{ca_cert}'`
-  `#{kubectl_secret_cmd} #{args.app_name}-ssl-key --from-literal=#{args.app_name.upcase}_SSL_KEY='#{key}'`
-  `#{kubectl_secret_cmd} #{args.app_name}-ssl-cert --from-literal=#{args.app_name.upcase}_SSL_CERT='#{cert}'`
+  puts "Generating puppet certificate for #{args.app_name}.#{domain}"
+
+  gen_cert = <<~HEREDOC
+    #{exec_cmd} -- puppetserver ca generate --certname #{args.app_name}.#{domain}
+  HEREDOC
+
+  sh gen_cert
+
+  ca_cert = <<~`HEREDOC`
+    #{exec_cmd} -- cat #{puppetdir}/ca/ca_crt.pem | base64
+  HEREDOC
+
+  key = <<~`HEREDOC`
+    #{exec_cmd} -- cat #{puppetdir}/private_keys/#{args.app_name}.#{domain}.pem | base64
+  HEREDOC
+
+  cert = <<~`HEREDOC`
+    #{exec_cmd} -- cat #{puppetdir}/certs/#{args.app_name}.#{domain}.pem | base64
+  HEREDOC
+
+  <<~`HEREDOC`
+    #{secret_cmd} #{args.app_name}-ssl-ca-cert --from-literal=#{args.app_name.upcase}_CA_CERT="#{ca_cert}"
+  HEREDOC
+
+  <<~`HEREDOC`
+    #{secret_cmd} #{args.app_name}-ssl-key --from-literal=#{args.app_name.upcase}_SSL_KEY="#{key}"
+  HEREDOC
+
+  <<~`HEREDOC`
+    #{secret_cmd} #{args.app_name}-ssl-cert --from-literal=#{args.app_name.upcase}_SSL_CERT="#{cert}"
+  HEREDOC
 end
