@@ -77,6 +77,13 @@ spec:
           value: "udp"
         - name: FLUENTD_SYSTEMD_CONF
           value: disable
+        - name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
+          value: >
+            [
+              "/var/log/containers/coredns*",
+              "/var/log/containers/fluentd*",
+              "/var/log/containers/syslog-ng*"
+            ]
         resources:
           limits:
             memory: 200Mi
