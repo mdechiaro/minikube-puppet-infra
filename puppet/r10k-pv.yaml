@@ -1,0 +1,27 @@
+---
+# r10k pv setup
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: r10kpv
+spec:
+  accessModes:
+  - ReadOnlyMany
+  - ReadWriteMany
+  capacity:
+    storage: 5Gi
+  hostPath:
+    path: /tmp/r10kpv
+---
+# r10k claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: r10kvolclaim
+spec:
+  accessModes:
+  - ReadOnlyMany
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

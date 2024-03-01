@@ -14,27 +14,35 @@ This is not for production use.
 
 ## TODO (in no order)
 * Fix centralized logging to use something modern
-* Add persistent storage
-* Add a webhook or self-hosted runner for CI/CD on control repo
 
 ## Get Started
 
-Run these commands to initialize.
+Run these commands to initialize. The `RUNNER_TOKEN` secret env variable
+is required for r10k syncs with github repositories. It is the API key
+given when setting up self-hosted runners in Github.
 
 ```
 rake minikube_config
-rake minikube_start
+minikube start
 rake minikube_load_images
-rake kubectl_apply[puppet]
+
+# required for r10k syncs with github repos
+kubectl create secret generic runner-token --from-literal=RUNNER_TOKEN=<github_runner_token>
+
+kubectl apply -f puppet
 ```
 
 ## Puppetboard
 
-This server requires a puppet cert and other secrets before it can be
-running properly.
+The application requires a puppet cert in order to communicate with PuppetDB.
 
 ```
 rake generate_puppet_cert[puppetboard]
+```
+
+The application requires a secret key in its config.
+
+```
 kubectl create secret generic puppetboard-secret-key \
   --from-literal=PUPPETBOARD_SECRET_KEY="$(rake generate_urandom_key)"
 ```

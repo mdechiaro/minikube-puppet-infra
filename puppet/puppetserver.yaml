@@ -45,20 +45,6 @@ data:
         terminus: puppetdb
         cache: yaml
     EOF
-
-    # setup r10k
-    gem install r10k
-
-    mkdir -p /etc/puppetlabs/r10k
-    cat <<EOF>> /etc/puppetlabs/r10k/r10k.yaml
-    ---
-    sources:
-      control:
-        remote: https://github.com/mdechiaro/puppet-control-repo
-        basedir: "/etc/puppetlabs/code/environments"
-    EOF
-
-    r10k deploy environment -pv
 ---
 # puppetserver deployment
 apiVersion: apps/v1
@@ -103,8 +89,13 @@ spec:
         volumeMounts:
         - name: docker-entrypoint-configmap
           mountPath: /docker-custom-entrypoint.d
+        - name: r10k-storage
+          mountPath: /etc/puppetlabs/code/environments
       volumes:
       - name: docker-entrypoint-configmap
         configMap:
           name: puppetserver-docker-entrypoint-configmap
           defaultMode: 0500
+      - name: r10k-storage
+        persistentVolumeClaim:
+          claimName: r10kvolclaim

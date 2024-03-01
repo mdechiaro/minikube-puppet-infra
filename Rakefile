@@ -14,11 +14,6 @@ task :minikube_config do
   sh 'minikube config set memory 8192'
 end
 
-desc 'Start minikube docker instance'
-task :minikube_start do
-  sh 'minikube start' unless minikube_running?
-end
-
 desc 'Load docker images into minikube'
 task :minikube_load_images do
   images = [
@@ -44,12 +39,6 @@ desc 'Delete minikube docker instance'
 task :minikube_delete do
   Rake::Task[:minikube_stop].execute if minikube_running?
   sh 'minikube delete'
-end
-
-desc 'Apply kubectl configs'
-task :kubectl_apply, [:config] do |_, args|
-  `echo 'Applying configs in #{args.config}'`
-  sh "kubectl apply -f #{args.config}"
 end
 
 desc 'generate an alphanumeric pseudo-random key'
