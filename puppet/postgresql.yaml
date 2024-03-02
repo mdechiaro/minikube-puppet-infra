@@ -1,32 +1,5 @@
 # postgresql setup
 ---
-# psql pv setup
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: psqlpv
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 12Gi
-  accessModes:
-  - ReadWriteOnce
-  hostPath:
-    path: /tmp/minikube-psql
----
-# psql claim
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: psqlvolclaim
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 3Gi
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -44,8 +17,19 @@ kind: ConfigMap
 metadata:
   name: psql-init-puppetdb-config
 data:
+  # https://www.puppet.com/docs/puppetdb/8/configure_postgres
   initdb.sql: |
-    CREATE EXTENSION pg_trgm;
+    create user puppetdb_read;
+    grant puppetdb_read to puppetdb;
+    revoke create on schema public from public;
+    grant create on schema public to puppetdb;
+    alter default privileges for user puppetdb in schema public grant select on tables to puppetdb_read;
+    alter default privileges for user puppetdb in schema public grant usage on sequences to puppetdb_read;
+    alter default privileges for user puppetdb in schema public grant execute on functions to puppetdb_read;
+    grant select on all tables in schema public to puppetdb_read;
+    grant usage on all sequences in schema public to puppetdb_read;
+    grant execute on all functions in schema public to puppetdb_read;
+    create extension pg_trgm;
 ---
 # psql deployment
 apiVersion: apps/v1
@@ -75,7 +59,10 @@ spec:
         - name: POSTGRES_USER
           value: puppetdb
         - name: POSTGRES_PASSWORD
-          value: puppetdb
+          valueFrom:
+            secretKeyRef:
+              name: postgres-password
+              key: POSTGRES_PASSWORD
         - name: POSTGRES_DB
           value: puppetdb
         ports:

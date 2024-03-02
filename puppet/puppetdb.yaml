@@ -71,6 +71,11 @@ spec:
               fieldPath: metadata.name
         - name: CERTNAME
           value: "$(POD_METADATA_NAME).default.svc.cluster.local"
+        - name: PUPPETDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-password
+              key: POSTGRES_PASSWORD
         - name: PUPPETSERVER_HOSTNAME
           value: puppetca.default.svc.cluster.local
         - name: DNS_ALT_NAMES

@@ -46,10 +46,6 @@ spec:
       - name: puppetca
         image: ghcr.io/voxpupuli/container-puppetserver:8.4.0-main
         env:
-        - name: POD_METADATA_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         - name: CA_ENABLED
           value: 'true'
         - name: AUTOSIGN
@@ -61,7 +57,7 @@ spec:
         - name: DNS_ALT_NAMES
           value: puppetca.default.svc.cluster.local
         - name: PUPPETSERVER_HOSTNAME
-          value: "$(POD_METADATA_NAME).default.svc.cluster.local"
+          value: puppetca.default.svc.cluster.local
         - name: CSR_ATTRIBUTES
           value: '{"ppAuthCertExt" : { "pp_cli_auth": "true" }, "extension_requests": { "pp_apptier": "prd", "pp_role": "puppetca" } }'
         ports:
@@ -70,8 +66,18 @@ spec:
         volumeMounts:
         - name: docker-entrypoint-configmap
           mountPath: /docker-custom-entrypoint.d
+        - name: puppetca-ssldir-pv
+          mountPath: /etc/puppetlabs/puppet/ssl
+        - name: puppetca-cadir-pv
+          mountPath: /etc/puppetlabs/puppetserver/ca
       volumes:
       - name: docker-entrypoint-configmap
         configMap:
           name: puppetca-docker-entrypoint-configmap
           defaultMode: 0500
+      - name: puppetca-cadir-pv
+        persistentVolumeClaim:
+          claimName: puppetca-cadir-pv-claim
+      - name: puppetca-ssldir-pv
+        persistentVolumeClaim:
+          claimName: puppetca-ssldir-pv-claim

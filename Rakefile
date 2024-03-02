@@ -15,18 +15,10 @@ task :minikube_config do
 end
 
 desc 'Load docker images into minikube'
-task :minikube_load_images do
-  images = [
-    'balabit/syslog-ng:latest',
-    'fluent/fluentd-kubernetes-daemonset:v1.11.2-debian-syslog-1.0',
-    'ghcr.io/voxpupuli/container-puppetdb:8.3.0-main',
-    'ghcr.io/voxpupuli/container-puppetserver:8.4.0-main',
-    'ghcr.io/voxpupuli/puppetboard:latest',
-    'postgres:latest',
-    'registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3'
-  ]
+task :minikube_load_images, [:file] do |_, args|
+  images = File.read(args.file).split("\n")
   images.each do |image|
-    sh "minikube image load #{image}"
+    sh "minikube image load #{image}" unless image.start_with?('#')
   end
 end
 
@@ -41,9 +33,9 @@ task :minikube_delete do
   sh 'minikube delete'
 end
 
-desc 'generate an alphanumeric pseudo-random key'
+desc 'generate a pseudo-random key'
 task :generate_urandom_key do
-  print `tr -dc [:graph:] </dev/urandom | head -c 32`
+  print `tr -dc [:graph:] < /dev/urandom | head -c 32`
 end
 
 desc 'Generate Puppet certificate for applications'

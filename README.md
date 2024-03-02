@@ -1,4 +1,4 @@
-# Build a Puppet stack in minikube
+# Minikube Puppet Stack
 
 This started out as weekend project to learn Kubernetes using minikube.
 This project creates a multi-node Puppet stack. The configs are managed
@@ -11,30 +11,44 @@ This is not for production use.
 * Puppet stack for config management inside minikube
 * Centralized logging with fluentd
 * Dashboards to monitor catalogs
+* Github runners to keep r10k and puppetservers in sync with codebase
 
 ## TODO (in no order)
 * Fix centralized logging to use something modern
+* Add github actions-runner-controller to replace current setup
 
 ## Get Started
 
-Run these commands to initialize. The `RUNNER_TOKEN` secret env variable
-is required for r10k syncs with github repositories. It is the API key
-given when setting up self-hosted runners in Github.
+The `RUNNER_TOKEN` secret env variable is required for control repo r10k
+syncs with github repositories. It is the API key given when setting up
+self-hosted runners in Github.
+
+```
+kubectl create secret generic runner-token \
+  --from-literal=RUNNER_TOKEN=<token>
+```
+
+The `POSTGRES_PASSWORD` secret env variable is required and can be set
+with a rake task.
+
+```
+kubectl create secret generic postgres-password \
+  --from-literal=POSTGRES_PASSWORD="$(rake generate_urandom_key)"
+```
+
+Run these commands to initialize.
 
 ```
 rake minikube_config
 minikube start
-rake minikube_load_images
-
-# required for r10k syncs with github repos
-kubectl create secret generic runner-token --from-literal=RUNNER_TOKEN=<github_runner_token>
-
+rake minikube_load_images[images.list]
 kubectl apply -f puppet
 ```
 
 ## Puppetboard
 
-The application requires a puppet cert in order to communicate with PuppetDB.
+The application requires a puppet cert in order to communicate with
+PuppetDB.
 
 ```
 rake generate_puppet_cert[puppetboard]
@@ -62,8 +76,9 @@ rake generate_puppet_cert[app_name]
 ## External services
 
 Use `minikube tunnel` in second terminal to test services with puppet
-outside of minikube. Use `kubectl get services -o wide` to get those external
-IPs. If external IPs are `<pending>`, then the tunnel isn't setup yet.
+outside of minikube. Use `kubectl get services -o wide` to get those
+external IPs. If external IPs are `<pending>`, then the tunnel isn't
+setup yet.
 
 Add `EXTERNAL-IP` output for puppet, puppetca services to `/etc/hosts`
 on the external agent you want to register to this stack. IPs can

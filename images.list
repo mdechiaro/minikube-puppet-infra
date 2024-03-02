@@ -1,0 +1,9 @@
+# list of docker images to use for stack
+balabit/syslog-ng:latest
+fluent/fluentd-kubernetes-daemonset:v1.11.2-debian-syslog-1.0
+ghcr.io/actions/actions-runner:latest
+ghcr.io/voxpupuli/container-puppetdb:8.3.0-main
+ghcr.io/voxpupuli/container-puppetserver:8.4.0-main
+ghcr.io/voxpupuli/puppetboard:latest
+postgres:latest
+registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3
