@@ -16,6 +16,7 @@ This is not for production use.
 ## TODO (in no order)
 * Fix centralized logging to use something modern
 * Add github actions-runner-controller to replace current setup
+* Add lifecycle hooks to cleanup certs on terminated nodes
 
 ## Get Started
 
