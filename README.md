@@ -7,16 +7,17 @@ with r10k and https://github.com/mdechiaro/puppet-control-repo.
 This is not for production use.
 
 ## Features
-
 * Puppet stack for config management inside minikube
 * Centralized logging with fluentd
 * Dashboards to monitor catalogs
 * Github runners to keep r10k and puppetservers in sync with codebase
+* NATS.io queuing service
+* Ad hoc certs for easy, secure communication between applications
 
 ## TODO (in no order)
 * Fix centralized logging to use something modern
 * Add github actions-runner-controller to replace current setup
-* Add lifecycle hooks to cleanup certs on terminated nodes
+* Add topology diagram
 
 ## Get Started
 
@@ -29,49 +30,22 @@ kubectl create secret generic runner-token \
   --from-literal=RUNNER_TOKEN=<token>
 ```
 
-The `POSTGRES_PASSWORD` secret env variable is required and can be set
-with a rake task.
+Run command to initialize.
 
 ```
-kubectl create secret generic postgres-password \
-  --from-literal=POSTGRES_PASSWORD="$(rake generate_urandom_key)"
+rake setup_stack
 ```
 
-Run these commands to initialize.
+## Ad hoc certs
+
+Some applications, nats, and puppetboard for example, require Puppet
+certificates to communicate securely. This requires PuppetCA to generate
+a certificate. A cert can be created with specific rake task. It outputs
+a cert bundle in `secrets/` that can be placed inside secrets. The name
+should match the `Service` metadata name.
 
 ```
-rake minikube_config
-minikube start
-rake minikube_load_images[images.list]
-kubectl apply -f puppet
-```
-
-## Puppetboard
-
-The application requires a puppet cert in order to communicate with
-PuppetDB.
-
-```
-rake generate_puppet_cert[puppetboard]
-```
-
-The application requires a secret key in its config.
-
-```
-kubectl create secret generic puppetboard-secret-key \
-  --from-literal=PUPPETBOARD_SECRET_KEY="$(rake generate_urandom_key)"
-```
-
-## PuppetDB certs
-
-Some applications, e.g. puppetboard, require Puppet certificates to
-communicate with PuppetDB. This requires PuppetCA to generate a
-certificate. A cert can be created with specific rake task. It outputs a
-base64 encoded string that can be placed inside secret environment
-variable.
-
-```
-rake generate_puppet_cert[app_name]
+rake generate_puppet_cert[service_name]
 ```
 
 ## External services
@@ -96,6 +70,7 @@ correct IPs.
 You can verify dns is working with:
 
 ```
+kubectl apply -f tools
 kubectl exec -i -t dnsutils -- nslookup <service>
 ```
 

@@ -65,7 +65,7 @@ spec:
     spec:
       containers:
       - name: puppetserver
-        image: ghcr.io/voxpupuli/container-puppetserver:8.4.0-main
+        image: ghcr.io/voxpupuli/container-puppetserver:8.4.0-v1.3.0
         env:
         - name: POD_METADATA_NAME
           valueFrom:
@@ -82,7 +82,11 @@ spec:
         - name: PUPPETSERVER_HOSTNAME
           value: "$(POD_METADATA_NAME).default.svc.cluster.local"
         - name: CSR_ATTRIBUTES
-          value: '{"extension_requests": { "pp_apptier": "prd", "pp_role": "puppetserver" } }'
+          value: '{"ppAuthCertExt" : { "pp_cli_auth": "true" }, "extension_requests": { "pp_apptier": "prd", "pp_role": "puppetserver" } }'
+        lifecycle:
+          preStop:
+            exec:
+              command: ['puppetserver', 'ca', 'clean', '--certname', "$(PUPPETSERVER_HOSTNAME)"]
         ports:
         - name: puppetserver
           containerPort: 8140
