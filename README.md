@@ -15,7 +15,6 @@ This is not for production use.
 * Ad hoc certs for easy, secure communication between applications
 
 ## TODO (in no order)
-* Fix centralized logging to use something modern
 * Add github actions-runner-controller to replace current setup
 * Add topology diagram
 

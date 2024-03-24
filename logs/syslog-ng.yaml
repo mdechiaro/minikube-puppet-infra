@@ -8,8 +8,9 @@ spec:
   selector:
     app.kubernetes.io/name: syslog-ng
   ports:
-  - protocol: UDP
+  - protocol: TCP
     port: 514
+    targetPort: 6514
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -20,9 +21,19 @@ data:
     @version: 4.6
     @include "scl.conf"
     source s_local { internal(); };
-    source s_net { udp(ip("0.0.0.0")); syslog(ip("0.0.0.0")); };
+    source tls_conn {
+        network(ip(0.0.0.0) port(6514)
+            transport("tls")
+            tls(
+                key-file("/mnt/secrets/key.pem")
+                cert-file("/mnt/secrets/cert.pem")
+                ca-dir("/mnt/secrets")
+                peer-verify(optional-trusted)
+            )
+        );
+    };
     destination d_file { file("/var/log/syslog"); };
-    log { source(s_local); source(s_net); destination(d_file); };
+    log { source(s_local); source(tls_conn); destination(d_file); };
 ---
 # syslog deployment
 apiVersion: apps/v1
@@ -47,13 +58,19 @@ spec:
         env:
         ports:
         - name: syslog-ng
-          containerPort: 514
-          protocol: UDP
+          containerPort: 6514
+          protocol: TCP
         volumeMounts:
         - name: syslog-ng-config
           mountPath: /etc/syslog-ng/syslog-ng.conf
           subPath: syslog-ng.conf
+        - name: syslog-tls-certs-vol
+          mountPath: /mnt/secrets
+          readOnly: true
       volumes:
       - name: syslog-ng-config
         configMap:
           name: syslog-ng-configmap
+      - name: syslog-tls-certs-vol
+        secret:
+          secretName: syslog-tls-certs

@@ -127,6 +127,21 @@ task :install_puppetboard do
   sh 'kubectl apply -f apps/puppetboard.yaml'
 end
 
+desc 'Setup TLS logs'
+task :setup_tls_logs do
+  syslog_local = 'secrets/syslog-ng.default.svc.cluster.local'
+  Rake::Task[:generate_puppet_cert].invoke('syslog-ng.default.svc.cluster.local')
+  Rake::Task[:generate_puppet_cert].reenable
+  sh "kubectl create secret generic syslog-tls-certs --from-file #{syslog_local}"
+
+  fluentd_local = 'secrets/fluentd'
+  Rake::Task[:generate_puppet_cert].invoke('fluentd')
+  Rake::Task[:generate_puppet_cert].reenable
+  sh "kubectl create secret generic fluentd-tls-certs -n kube-system --from-file #{fluentd_local}"
+
+  sh 'kubectl apply -f logs/'
+end
+
 desc 'Run all steps to setup stack'
 task :setup_stack do
   sh 'minikube start' unless minikube_running?
@@ -139,9 +154,10 @@ task :setup_stack do
   sh "kubectl create secret generic postgres-password --from-literal=POSTGRES_PASSWORD=#{psql_pass}"
 
   sh 'kubectl apply -f puppet/'
-  puts 'Wait 120s for PuppetCA to initialize'
-  sh 'sleep 120'
+  puts 'Wait 180s for PuppetCA to initialize'
+  sh 'sleep 180'
 
+  Rake::Task[:setup_tls_logs].execute
   Rake::Task[:install_nats].execute
   Rake::Task[:install_puppetboard].execute
 

@@ -73,10 +73,16 @@ spec:
           value: syslog-ng.default.svc.cluster.local
         - name:  SYSLOG_PORT
           value: "514"
-        - name:  SYSLOG_PROTOCOL
-          value: "udp"
         - name: FLUENTD_SYSTEMD_CONF
           value: disable
+        - name: SYSLOG_TLS
+          value: "true"
+        - name: SYSLOG_PROTOCOL
+          value: "tcp"
+        - name: SYSLOG_CA_FILE
+          value: "/mnt/secrets/ca.pem"
+        - name: SYSLOG_VERIFY_MODE
+          value: "0"
         - name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
           value: >
             [
@@ -96,6 +102,9 @@ spec:
         - name: node-container-logs
           mountPath: /var/lib/docker/containers
           readOnly: true
+        - name: fluentd-tls-certs-vol
+          mountPath: /mnt/secrets
+          readOnly: true
       terminationGracePeriodSeconds: 30
       volumes:
       - name: var-log
@@ -104,3 +113,6 @@ spec:
       - name: node-container-logs
         hostPath:
           path: /var/lib/docker/containers
+      - name: fluentd-tls-certs-vol
+        secret:
+          secretName: fluentd-tls-certs
