@@ -8,6 +8,17 @@ def minikube_running?
   false
 end
 
+def puppetca_running?
+  sleep 5 until system('kubectl get pods | grep puppetca | grep Running > /dev/null')
+
+  puppetca = `kubectl get pods | grep puppetca | awk '{print $1}'`.chomp
+  status = `kubectl exec -it #{puppetca} -- curl -s -k https://localhost:8140/status/v1/simple 2> /dev/null`
+
+  return true if status == 'running'
+
+  false
+end
+
 desc 'Adjust minikube configs'
 task :minikube_config do
   sh 'minikube config set cpus 4'
@@ -154,8 +165,10 @@ task :setup_stack do
   sh "kubectl create secret generic postgres-password --from-literal=POSTGRES_PASSWORD=#{psql_pass}"
 
   sh 'kubectl apply -f puppet/'
-  puts 'Wait 180s for PuppetCA to initialize'
-  sh 'sleep 180'
+
+  puts 'Waiting for PuppetCA to start...'
+
+  sleep 5 until puppetca_running?
 
   Rake::Task[:setup_tls_logs].execute
   Rake::Task[:install_nats].execute
