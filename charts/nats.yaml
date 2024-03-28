@@ -1,0 +1,21 @@
+---
+tlsCA:
+  enabled: true
+  secretName: nats-ca-tls-certs
+config:
+  jetstream:
+    enabled: true
+  nats:
+    tls:
+      enabled: true
+      secretName: nats-server-tls-certs
+      ca_file: /etc/nats-certs/nats/ca.pem
+      cert_file: /etc/nats-certs/nats/tls.crt
+      key_file: /etc/nats-certs/nats/tls.key
+natsBox:
+  contexts:
+    default:
+      tls:
+        secretName: nats-client-tls-certs
+        cert: tls.crt
+        key: tls.key

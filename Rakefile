@@ -95,20 +95,7 @@ task :install_nats do
   Rake::Task[:install_nats_server].execute
   Rake::Task[:install_nats_client].execute
 
-  <<~`HEREDOC`
-    helm install nats-server nats/nats \
-      --set tlsCA.enabled=true \
-      --set tlsCA.secretName=nats-ca-tls-certs \
-      --set config.jetstream.enabled=true \
-      --set config.nats.tls.secretName=nats-server-tls-certs \
-      --set config.nats.tls.enabled=true \
-      --set config.nats.tls.cert_file=/etc/nats-certs/nats/tls.crt \
-      --set config.nats.tls.key_file=/etc/nats-certs/nats/tls.key \
-      --set config.nats.tls.ca_file=/etc/nats-certs/nats/ca.pem \
-      --set natsBox.contexts.default.tls.secretName=nats-client-tls-certs \
-      --set natsBox.contexts.default.tls.cert=tls.crt \
-      --set natsBox.contexts.default.tls.key=tls.key
-  HEREDOC
+  sh 'helm install nats-server nats/nats -f charts/nats.yaml'
 end
 
 desc 'Install puppetboard'
